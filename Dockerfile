@@ -1,3 +1,11 @@
-FROM ubuntu:16.04
+FROM python:2.7
 
-expose 8888
+ADD . /app
+
+WORKDIR /app
+
+RUN pip install -r requirements.txt
+
+EXPOSE 8888
+
+CMD ["python", "app.py"]
