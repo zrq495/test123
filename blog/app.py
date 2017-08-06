@@ -3,8 +3,12 @@
 from flask import Flask
 from werkzeug.utils import find_modules, import_string
 
+from flask_graphql import GraphQLView
+
+
 from blog.database import db
 from blog.config import Config
+from blog.schema import schema
 
 
 def create_app():
@@ -20,6 +24,9 @@ def register_blueprints(app):
         mod = import_string(name)
         if hasattr(mod, 'bp'):
             app.register_blueprint(mod.bp)
+    app.add_url_rule('/graphql', view_func=GraphQLView.as_view(
+        'graphql', schema=schema, graphiql=True))
+
 
 
 def register_extensions(app):

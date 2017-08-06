@@ -34,10 +34,15 @@ class Post(db.Model):
         primaryjoin='Comment.post_id==Post.id',
         foreign_keys='Comment.post_id')
 
+    user = db.relationship(
+        'User',
+        primaryjoin='User.id==Post.user_id',
+        foreign_keys='Post.user_id')
+
 
 class Comment(db.Model):
 
-    __tablename__ = 'comments'
+    __tablename__ = 'comment'
 
     STATUS_DRAFT = 'draft'
     STATUS_PUBLISHED = 'published'
@@ -51,3 +56,8 @@ class Comment(db.Model):
     created_at = db.Column(
         db.DateTime(timezone=True), nullable=False, index=True,
         server_default=db.func.current_timestamp())
+
+    user = db.relationship(
+        'User',
+        primaryjoin='User.id==Comment.user_id',
+        foreign_keys='Comment.user_id')

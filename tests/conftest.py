@@ -32,3 +32,17 @@ def user(db):
     u = UserFactory()
     db.session.commit()
     return u
+
+
+@pytest.fixture
+def post(db):
+    p = PostFactory()
+    db.session.commit()
+    return p
+
+
+@pytest.fixture
+def comment(db):
+    c = CommentFactory()
+    db.session.commit()
+    return c
