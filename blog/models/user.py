@@ -2,6 +2,10 @@
 
 from blog.database import db
 
+__all__ = [
+    'User',
+]
+
 
 class User(db.Model):
 
