@@ -3,10 +3,15 @@
 from flask import Flask
 from werkzeug.utils import find_modules, import_string
 
+from blog.database import db
+from blog.config import Config
+
 
 def create_app():
     app = Flask(__name__)
+    app.config.from_object(Config)
     register_blueprints(app)
+    register_extensions(app)
     return app
 
 
@@ -15,3 +20,8 @@ def register_blueprints(app):
         mod = import_string(name)
         if hasattr(mod, 'bp'):
             app.register_blueprint(mod.bp)
+
+
+def register_extensions(app):
+    db.init_app(app)
+    db.app = app

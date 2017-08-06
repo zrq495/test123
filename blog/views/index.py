@@ -2,6 +2,8 @@
 
 from flask import Blueprint
 
+from blog.models import User
+
 bp = Blueprint('index', __name__)
 
 
