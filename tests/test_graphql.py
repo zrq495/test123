@@ -85,3 +85,47 @@ class TestViews(object):
         assert result.data['latestComments']['edges'][0]['node']['id'] == to_global_id('CommentType', comment.id)
         assert result.data['latestComments']['edges'][0]['node']['user']['id'] == to_global_id('UserType', comment.user.id)
         assert result.data['latestComments']['edges'][0]['node']['post']['id'] == to_global_id('PostType', comment.post.id)
+
+    def test_create_post_query(self, user):
+        query = '''
+        mutation createPost {
+          createPost(input:{title: "mutation title", userId: %s, content:"mutation content"}) {
+                ok
+                post{
+                    id
+                    userId
+                    title
+                    content
+                }
+            }
+        }
+        ''' % user.id
+        result = schema.execute(query)
+        assert not result.errors
+        assert result.data['createPost']['ok'] is True
+        assert result.data['createPost']['post']['userId'] == user.id
+
+    def test_create_comment_query(self, user, post):
+        query = '''
+        mutation mycreateComment{
+          createComment(
+            input: {
+              userId: %s
+              content: "mutation comment"
+              postId: %s
+            }
+          ) {
+            ok
+            comment{
+              userId
+              postId
+              content
+            }
+          }
+        }
+        ''' % (user.id, post.id)
+        result = schema.execute(query)
+        assert not result.errors
+        assert result.data['createComment']['ok'] is True
+        assert result.data['createComment']['comment']['userId'] == user.id
+        assert result.data['createComment']['comment']['postId'] == post.id

@@ -7,6 +7,7 @@ from graphene import relay
 from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
 
 from blog.models import User, Post, Comment
+from blog.database import db
 
 
 class UserType(SQLAlchemyObjectType):
@@ -76,5 +77,44 @@ class Query(graphene.ObjectType):
         return query.all()
 
 
+class CreatePost(relay.ClientIDMutation):
+    class Input:
+        title = graphene.String(required=True)
+        user_id = graphene.Int(required=True)
+        content = graphene.String(required=True)
+
+    ok = graphene.Boolean()
+    post = graphene.Field(PostType)
+
+    @classmethod
+    def mutate_and_get_payload(cls, input, context, info):
+        post = Post(**input)
+        db.session.add(post)
+        db.session.commit()
+        return CreatePost(post=post, ok=True)
+
+
+class CreateComment(relay.ClientIDMutation):
+    class Input:
+        user_id = graphene.Int(required=True)
+        post_id = graphene.Int(required=True)
+        content = graphene.String(required=True)
+
+    ok = graphene.Boolean()
+    comment = graphene.Field(CommentType)
+
+    @classmethod
+    def mutate_and_get_payload(cls, input, context, info):
+        comment = Comment(**input)
+        db.session.add(comment)
+        db.session.commit()
+        return CreateComment(comment=comment, ok=True)
+
+
+class Mutation(graphene.ObjectType):
+    create_post = CreatePost.Field()
+    create_comment = CreateComment.Field()
+
+
 schema = graphene.Schema(
-    query=Query, types=[UserType, PostType, CommentType])
+    query=Query, mutation=Mutation, types=[UserType, PostType, CommentType])
