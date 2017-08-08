@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import unicode_literals
+
 import graphene
 from graphene import relay
 from graphene_sqlalchemy import SQLAlchemyConnectionField, SQLAlchemyObjectType
@@ -12,6 +14,22 @@ class UserType(SQLAlchemyObjectType):
     class Meta:
         model = User
         interfaces = (relay.Node, )
+
+    username = graphene.String(description='The username of the user')
+
+
+class OrderByDirection(graphene.Enum):
+    ASC = 'asc'
+    DESC = 'desc'
+
+
+class PostTypeOrderField(graphene.Enum):
+    CREATED_AT = 'created_at'
+
+
+class PostTypeOrder(graphene.InputObjectType):
+    field = PostTypeOrderField(required=True)
+    direction = OrderByDirection(default_value='asc')
 
 
 class PostType(SQLAlchemyObjectType):
@@ -30,30 +48,26 @@ class CommentType(SQLAlchemyObjectType):
 
 class Query(graphene.ObjectType):
     node = relay.Node.Field()
-    user = graphene.Field(UserType, id=graphene.Int())
-    post = graphene.Field(PostType, id=graphene.Int())
+    user = relay.Node.Field(UserType)
+    post = relay.Node.Field(PostType)
 
     all_posts = SQLAlchemyConnectionField(
-        PostType, offset=graphene.Int(), order_by=graphene.String())
+        PostType,
+        first=graphene.Int(default_value=3),
+        offset=graphene.Int(default_value=0),
+        order_by=PostTypeOrder())
     latest_comments = SQLAlchemyConnectionField(CommentType)
-
-    def resolve_user(self, args, context, info):
-        user = UserType.get_query(context).first()
-        return user
-
-    def resolve_post(self, args, context, info):
-        post = PostType.get_query(context).first()
-        return post
 
     def resolve_all_posts(self, args, context, info):
         query = PostType.get_query(context)
         order_by = args.get('order_by')
         if not order_by:
             order_by = Post.created_at.desc()
+        else:
+            order_by = getattr(getattr(Post, order_by['field']), order_by['direction'])()
         query = query.order_by(order_by)
-        offset = args.get('offset')
-        if offset:
-            query = query.offset(offset)
+        offset = args['offset']
+        query = query.offset(offset)
         return query.all()
 
     def resolve_latest_comments(self, args, context, info):
