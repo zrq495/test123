@@ -37,7 +37,7 @@ class TestViews(object):
         assert not result.errors
         assert result.data['post']['id'] == g_id
 
-    def test_all_posts_query(self, db, post):
+    def test_all_posts_query(self, db, comment):
         query = '''
         query {
             allPosts (orderBy: {field: CREATED_AT, direction: DESC}, offset: 0){
@@ -49,6 +49,14 @@ class TestViews(object):
                             id
                             username
                         }
+                        comments (orderBy: {field: CREATED_AT, direction: DESC}, offset: 0) {
+                            edges {
+                                node {
+                                    id
+                                    content
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -56,8 +64,10 @@ class TestViews(object):
         '''
         result = schema.execute(query)
         assert not result.errors
+        post = comment.post
         assert result.data['allPosts']['edges'][0]['node']['id'] == to_global_id('PostType', post.id)
         assert result.data['allPosts']['edges'][0]['node']['user']['id'] == to_global_id('UserType', post.user.id)
+        assert result.data['allPosts']['edges'][0]['node']['comments']['edges'][0]['node']['id'] == to_global_id('CommentType', comment.id)
 
     def test_latest_comments_query(self, db, comment):
         query = '''
