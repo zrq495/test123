@@ -30,6 +30,15 @@ class PostTypeOrderField(graphene.Enum):
 
 class PostTypeOrder(graphene.InputObjectType):
     field = PostTypeOrderField(required=True)
+    direction = OrderByDirection(default_value='desc')
+
+
+class CommentTypeOrderField(graphene.Enum):
+    CREATED_AT = 'created_at'
+
+
+class CommentTypeOrder(graphene.InputObjectType):
+    field = CommentTypeOrderField(required=True)
     direction = OrderByDirection(default_value='asc')
 
 
@@ -38,6 +47,25 @@ class PostType(SQLAlchemyObjectType):
     class Meta:
         model = Post
         interfaces = (relay.Node, )
+
+    comments = SQLAlchemyConnectionField(
+        'blog.schema.CommentType',
+        first=graphene.Int(default_value=3),
+        offset=graphene.Int(default_value=0),
+        order_by=CommentTypeOrder())
+
+    def resolve_comments(self, args, context, info):
+        query = CommentType.get_query(context)
+        query = query.filter(Comment.post_id == self.id)
+        order_by = args.get('order_by')
+        if not order_by:
+            order_by = Comment.created_at
+        else:
+            order_by = getattr(getattr(Comment, order_by['field']), order_by['direction'])()
+        query = query.order_by(order_by)
+        offset = args['offset']
+        query = query.offset(offset)
+        return query.all()
 
 
 class CommentType(SQLAlchemyObjectType):
